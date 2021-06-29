@@ -15,7 +15,8 @@ public class EmployeeDao {
 	JdbcTemplate stmt;
 
 	public void insertEmployee(EmployeeBean empBean) {
-		stmt.update("insert into employee (ename,salary) values (?,?)", empBean.getEname(), empBean.getSalary());
+		stmt.update("insert into employee (ename,salary,email,password) values (?,?,?,?)", empBean.getEname(),
+				empBean.getSalary(), empBean.getEmail(), empBean.getPassword());
 	}
 
 	public List<EmployeeBean> getAllEmployees() {
@@ -50,6 +51,32 @@ public class EmployeeDao {
 	public int updateEmployee(EmployeeBean employee) {
 		return stmt.update("update employee set ename = ? , salary = ? where  empid = ?", employee.getEname(),
 				employee.getSalary(), employee.getEmpId());
+	}
+
+	public EmployeeBean authenticate(EmployeeBean employee) {
+
+		try {
+			employee = stmt.queryForObject("select * from employee where email  = ? and password = ?",
+					new Object[] { employee.getEmail(), employee.getPassword() },
+					new BeanPropertyRowMapper<EmployeeBean>(EmployeeBean.class));
+		} catch (Exception e) {
+			employee = null;
+		}
+		return employee;
+	}
+
+	public void updateToken(String authToken, int empId) {
+
+		stmt.update("update employee set authtoken = ? where empid = ?", authToken, empId);
+	}
+
+	public boolean validateToken(String authToken) {
+		List<EmployeeBean> e = stmt.query("select * from employee where authtoken = ?",
+				new Object[] { authToken }, new BeanPropertyRowMapper<EmployeeBean>(EmployeeBean.class));
+		if (e.size() == 0)
+			return false;
+		else
+			return true;
 	}
 
 }

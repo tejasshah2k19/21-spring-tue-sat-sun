@@ -8,14 +8,19 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.bean.EmployeeBean;
 import com.bean.ResponseBean;
 import com.dao.EmployeeDao;
+import com.service.AuthTokenService;
 
 @RestController
 public class EmployeeController {
+
+	@Autowired
+	AuthTokenService authTokenService;
 
 	@Autowired
 	EmployeeDao employeeDao;
@@ -28,8 +33,19 @@ public class EmployeeController {
 	}
 
 	@GetMapping("/employees")
-	public ResponseBean<List<EmployeeBean>> getAllEmps() {
-		return ResponseBean.data(employeeDao.getAllEmployees(), "Employees Retrieved", 200);
+	public ResponseBean<List<EmployeeBean>> getAllEmps(@RequestParam("authToken") String authToken ) {
+	
+		System.out.println("token => " + authToken);
+		
+		if(employeeDao.validateToken(authToken)) {
+			return ResponseBean.data(employeeDao.getAllEmployees(), "Employees Retrieved", 200);
+					
+		}else {
+			return ResponseBean.data(null,"Invalid user",-1);
+		}
+		//db 
+		
+		//
 	}
 
 //	@GetMapping("/employee/{empId}")
@@ -81,9 +97,24 @@ public class EmployeeController {
 		System.out.println(employee.getEmpId());
 		if (employeeDao.updateEmployee(employee) != 0) {
 			return ResponseBean.data(employee, "Employee updated", 200);
-		}else {
+		} else {
 			return ResponseBean.data(employee, "Invalid Data", -1);
 		}
 	}
 
+	@PostMapping("/login")
+	public ResponseBean<EmployeeBean> login(EmployeeBean employee) {
+
+		employee = employeeDao.authenticate(employee);
+		if (employee == null) {
+			return ResponseBean.data(null, "Invalid Credentials", -1);
+		} else {
+			String authToken = authTokenService.generateToken();	
+			employeeDao.updateToken(authToken,employee.getEmpId());
+			employee.setAuthToken(authToken);
+			
+			return ResponseBean.data(employee, "Login done", 200);
+		}
+
+	}
 }
