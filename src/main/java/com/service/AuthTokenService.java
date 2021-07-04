@@ -8,7 +8,7 @@ public class AuthTokenService {
 	private static final String ALPHA_NUMERIC_STRING = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyz";
 
 	public String generateToken() {
-		int count = 16;
+		int count = 16;//62
 		StringBuilder builder = new StringBuilder();
 		while (count-- != 0) {
 			int character = (int) (Math.random() * ALPHA_NUMERIC_STRING.length());

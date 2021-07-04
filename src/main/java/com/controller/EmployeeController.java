@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -17,6 +18,7 @@ import com.dao.EmployeeDao;
 import com.service.AuthTokenService;
 
 @RestController
+@RequestMapping("/api/")
 public class EmployeeController {
 
 	@Autowired
@@ -33,18 +35,21 @@ public class EmployeeController {
 	}
 
 	@GetMapping("/employees")
-	public ResponseBean<List<EmployeeBean>> getAllEmps(@RequestParam("authToken") String authToken ) {
-	
+	public ResponseBean<List<EmployeeBean>> getAllEmps(
+			@RequestParam(defaultValue = "NA", name = "authToken") String authToken) {
+
 		System.out.println("token => " + authToken);
-		
-		if(employeeDao.validateToken(authToken)) {
+
+		if (authToken == null || authToken.equals("NA")) {
+			return ResponseBean.data(null, "Invalid user", -1);
+		} else if (employeeDao.validateToken(authToken)) {
 			return ResponseBean.data(employeeDao.getAllEmployees(), "Employees Retrieved", 200);
-					
-		}else {
-			return ResponseBean.data(null,"Invalid user",-1);
+
+		} else {
+			return ResponseBean.data(null, "Invalid user", -1);
 		}
-		//db 
-		
+		// db
+
 		//
 	}
 
@@ -67,9 +72,18 @@ public class EmployeeController {
 //		}
 //		return rb;
 //	}
+	
+
+	//method  
 
 	@GetMapping("/employee/{empId}")
-	public ResponseBean<EmployeeBean> getEmployeeById(@PathVariable("empId") int empId) {
+	public ResponseBean<EmployeeBean> getEmployeeById(@PathVariable("empId") int empId,
+			@RequestParam(defaultValue = "NA", name = "authToken") String authToken) {
+
+		if (authToken == null || authToken.equals("NA") || employeeDao.validateToken(authToken) == false) {
+			return ResponseBean.data(null, "Invalid user", -1);
+		}
+
 		EmployeeBean employee = employeeDao.getEmployeeById(empId);
 
 		if (employee == null) {
@@ -109,10 +123,12 @@ public class EmployeeController {
 		if (employee == null) {
 			return ResponseBean.data(null, "Invalid Credentials", -1);
 		} else {
-			String authToken = authTokenService.generateToken();	
-			employeeDao.updateToken(authToken,employee.getEmpId());
+			// success
+			//jwt 
+			String authToken = authTokenService.generateToken();
+			employeeDao.updateToken(authToken, employee.getEmpId());
 			employee.setAuthToken(authToken);
-			
+
 			return ResponseBean.data(employee, "Login done", 200);
 		}
 
